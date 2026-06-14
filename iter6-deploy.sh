@@ -1,6 +1,7 @@
 #!/bin/bash
 # Iter6 deploy: scorecards + Zoom video analysis pipeline
 set -e
+exec > >(tee /tmp/iter6-deploy.log) 2>&1
 
 APP_DIR=/home/skinline/skinline-hr-crm
 REPO_URL=https://raw.githubusercontent.com/premiumbeautyteam-creator/skinline-hr-deploy/main
