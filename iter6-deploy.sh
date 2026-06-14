@@ -11,10 +11,19 @@ echo "[1/8] Backup..."
 cp data.db "data.db.bak.iter6.$(date +%s)"
 
 echo "[2/8] Install yt-dlp (if missing)..."
-if ! command -v yt-dlp &>/dev/null; then
-  pip3 install -U yt-dlp 2>&1 | tail -3 || curl -fsSL https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp && chmod +x /usr/local/bin/yt-dlp
+set +e
+if ! command -v yt-dlp >/dev/null 2>&1; then
+  echo "  yt-dlp missing, installing static binary..."
+  curl -fsSL https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp
+  chmod +x /usr/local/bin/yt-dlp
+  if ! command -v yt-dlp >/dev/null 2>&1; then
+    echo "  trying pip3..."
+    apt-get install -y python3-pip >/dev/null 2>&1
+    pip3 install -U yt-dlp 2>&1 | tail -3
+  fi
 fi
-yt-dlp --version || echo "WARN: yt-dlp install failed"
+yt-dlp --version 2>&1 | head -1 || echo "WARN: yt-dlp install failed (video pipeline will fail until fixed)"
+set -e
 
 echo "[3/8] Verify ffmpeg..."
 ffmpeg -version 2>&1 | head -1
