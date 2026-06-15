@@ -16,30 +16,39 @@ if [ -z "$HR_ID" ]; then
   exit 1
 fi
 
-echo "=== Step 2: Create or find test candidate ==="
+echo "=== Step 2: Find or create vacancy ==="
+VAC_ID=$(sqlite3 data.db "SELECT id FROM vacancies WHERE status='active' LIMIT 1;")
+if [ -z "$VAC_ID" ]; then
+  VAC_ID=$(uuidgen)
+  NOW_ISO=$(date -u +%Y-%m-%dT%H:%M:%S.000Z)
+  sqlite3 data.db "INSERT INTO vacancies (id, title, city, status, salary, description, created_at) VALUES ('$VAC_ID', 'Тестовая вакансия', 'Казань', 'active', '50000', 'Test', '$NOW_ISO');" 2>&1 || true
+fi
+echo "VAC_ID=$VAC_ID"
+
+echo "=== Step 3: Create or find test candidate ==="
 CAND_ID=$(sqlite3 data.db "SELECT id FROM candidates WHERE phone='+79990000001' LIMIT 1;")
 if [ -z "$CAND_ID" ]; then
   CAND_ID=$(uuidgen)
-  NOW=$(date -u +%s)000
+  NOW_ISO=$(date -u +%Y-%m-%dT%H:%M:%S.000Z)
   sqlite3 data.db <<SQL
-INSERT INTO candidates (id, full_name, phone, city, role_target, stage, source, hr_owner_id, created_at, updated_at)
-VALUES ('$CAND_ID', 'Тест Видео-Анализа', '+79990000001', 'Казань', 'administrator', 'video_interview', 'test', '$HR_ID', '$NOW', '$NOW');
+INSERT INTO candidates (id, full_name, phone, city, vacancy_id, source, stage, experience, tags, created_at)
+VALUES ('$CAND_ID', 'Тест Видео-Анализа', '+79990000001', 'Казань', '$VAC_ID', 'manual', 'video_interview', '1-3 года', '[]', '$NOW_ISO');
 SQL
   echo "Created candidate $CAND_ID"
 else
   echo "Reusing candidate $CAND_ID"
 fi
 
-echo "=== Step 3: Create interview_videos record ==="
+echo "=== Step 4: Create interview_videos record ==="
 VID_ID=$(uuidgen)
-NOW=$(date -u +%s)000
+NOW_ISO=$(date -u +%Y-%m-%dT%H:%M:%S.000Z)
 sqlite3 data.db <<SQL
 INSERT INTO interview_videos (id, candidate_id, source, source_url, status, uploaded_by, created_at, updated_at)
-VALUES ('$VID_ID', '$CAND_ID', 'upload', '$VIDEO_URL', 'pending', '$HR_ID', '$NOW', '$NOW');
+VALUES ('$VID_ID', '$CAND_ID', 'upload', '$VIDEO_URL', 'pending', '$HR_ID', '$NOW_ISO', '$NOW_ISO');
 SQL
 echo "Created video $VID_ID"
 
-echo "=== Step 4: Trigger pipeline via internal HTTP ==="
+echo "=== Step 5: Trigger pipeline ==="
 # Создадим эндпоинт inline через node, импортирующий video_pipeline.enqueueAnalysis
 cat > /tmp/enqueue.mjs <<EOF
 import('/home/skinline/skinline-hr-crm/dist/index.js').catch(()=>{});
@@ -63,7 +72,7 @@ EOF
 # Внутрипроцессная очередь в running pm2 не увидит наш enqueue.
 # Единственный путь: добавить временный admin-route ИЛИ напрямую запустить pipeline в отдельном процессе.
 
-echo "=== Step 4b: Run pipeline standalone ==="
+echo "=== Step 5b: Run pipeline standalone ==="
 # Запускаем pipeline в фоне через standalone node-процесс
 nohup node --experimental-vm-modules -e "
 import('/home/skinline/skinline-hr-crm/dist/lib/video_pipeline.js').then(async (mod) => {
@@ -80,7 +89,7 @@ import('/home/skinline/skinline-hr-crm/dist/lib/video_pipeline.js').then(async (
 PID=$!
 echo "Pipeline PID=$PID"
 
-echo "=== Step 5: Wait and check ==="
+echo "=== Step 6: Wait and check ==="
 sleep 5
 echo "--- pipeline.out after 5s ---"
 cat /tmp/pipeline.out
