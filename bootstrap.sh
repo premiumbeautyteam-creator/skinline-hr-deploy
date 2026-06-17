@@ -91,10 +91,17 @@ DATABASE_URL=postgres://skinline:${DB_PASS}@127.0.0.1:5432/skinline_hr
 PUBLIC_URL=https://${APP_DOMAIN}
 API_URL=https://${API_DOMAIN}
 SESSION_SECRET=$(openssl rand -hex 32)
+# Шифрование токенов интеграций (AES-256-GCM, 32 байта = 64 hex)
+ENCRYPTION_KEY=$(openssl rand -hex 32)
 # Avito (заполнить после регенерации ключей в кабинете)
 AVITO_CLIENT_ID=
 AVITO_CLIENT_SECRET=
 AVITO_WEBHOOK_SECRET=$(openssl rand -hex 24)
+# hh.ru OAuth (заполнить значениями из кабинета работодателя hh.ru)
+HH_CLIENT_ID=
+HH_CLIENT_SECRET=
+HH_REDIRECT_URI=https://${API_DOMAIN}/api/integrations/hh/callback
+HH_EMPLOYER_ID=
 EOF
 chown ${APP_USER}:${APP_USER} "${APP_DIR}/.env"
 chmod 600 "${APP_DIR}/.env"
