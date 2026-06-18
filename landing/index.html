@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Вакансия косметолог — SKIN LINE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,500;0,600;1,500&display=swap" rel="stylesheet" />
+<link href="https://api.fontshare.com/v2/css?f[]=general-sans@300,400,500,600&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --teal:#326070; --teal-deep:#284e5c;
+    --blush:#f3e3da; --blush-deep:#e8cfc2; --sand:#f7efe8; --cream:#fbf6f1;
+    --rose:#d8a48f; --ink:#3a322e; --muted:#7d716a; --white:#fff;
+    --maxw:1140px; --ease:cubic-bezier(.22,.61,.36,1);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{font-family:'General Sans',system-ui,sans-serif;color:var(--ink);background:var(--cream);line-height:1.65;font-weight:400;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 26px}
+  h1,h2,h3{font-weight:600;line-height:1.12}
+  .serif{font-family:'Cormorant',Georgia,serif}
+
+  header.nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:20px 34px;transition:.4s var(--ease)}
+  header.nav.scrolled{background:rgba(251,246,241,.92);backdrop-filter:blur(12px);padding:13px 34px;box-shadow:0 1px 0 rgba(58,50,46,.07)}
+  .brand{display:flex;align-items:center;gap:12px}
+  .brand img{width:40px}
+  .brand .name{font-weight:600;letter-spacing:.22em;font-size:18px;color:var(--teal)}
+  .nav-cta{font-size:14px;font-weight:500;padding:11px 24px;border-radius:100px;background:var(--rose);color:#fff;text-decoration:none;transition:.3s var(--ease)}
+  .nav-cta:hover{transform:translateY(-2px);background:var(--teal)}
+
+  /* HERO rounded split */
+  .hero{padding:140px 0 80px}
+  .hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:54px;align-items:center}
+  .eyebrow{font-family:'Cormorant',serif;font-style:italic;font-size:1.5rem;color:var(--rose);margin-bottom:14px}
+  .hero h1{font-size:clamp(2.6rem,5.4vw,4.2rem);letter-spacing:-.01em;color:var(--ink);font-weight:600}
+  .hero h1 em{font-family:'Cormorant',serif;font-style:italic;font-weight:500;color:var(--teal)}
+  .hero p.lead{font-size:1.18rem;color:var(--muted);font-weight:300;max-width:480px;margin:24px 0}
+  .salary-pill{display:inline-flex;align-items:center;gap:10px;background:var(--blush);color:var(--teal-deep);font-weight:500;padding:12px 22px;border-radius:100px;font-size:1.02rem}
+
+  /* native apply form */
+  .apply-form{display:flex;flex-direction:column;gap:14px}
+  .apply-form .af-row label{display:flex;flex-direction:column;gap:6px;font-size:.92rem;font-weight:500;color:var(--ink)}
+  .apply-form .af-row label span{color:var(--rose)}
+  .apply-form input,.apply-form textarea{font-family:inherit;font-size:1rem;color:var(--ink);background:var(--cream);border:1px solid var(--blush-deep);border-radius:14px;padding:13px 16px;transition:.25s var(--ease);width:100%}
+  .apply-form input::placeholder,.apply-form textarea::placeholder{color:#b6a99f}
+  .apply-form input:focus,.apply-form textarea:focus{outline:none;border-color:var(--teal);background:#fff;box-shadow:0 0 0 3px rgba(50,96,112,.10)}
+  .apply-form textarea{resize:vertical;min-height:54px}
+  .af-consent{display:flex;align-items:flex-start;gap:10px;font-size:.84rem;color:var(--muted);font-weight:400;line-height:1.4;cursor:pointer}
+  .af-consent input{width:18px;height:18px;margin-top:1px;accent-color:var(--teal);flex:0 0 auto}
+  .af-submit{margin-top:4px;font-family:inherit;font-size:1.02rem;font-weight:500;color:#fff;background:var(--teal);border:none;border-radius:100px;padding:15px 24px;cursor:pointer;transition:.3s var(--ease)}
+  .af-submit:hover{background:var(--teal-deep);transform:translateY(-2px)}
+  .af-submit:disabled{opacity:.6;cursor:default;transform:none}
+  .af-msg{font-size:.92rem;font-weight:500;min-height:1.2em;margin-top:2px}
+  .af-msg.ok{color:var(--teal)}
+  .af-msg.err{color:#c0533c}
+  .apply-form.done{display:none}
+  .form-card .thanks{display:none;text-align:center;padding:18px 6px}
+  .form-card .thanks.show{display:block}
+  .form-card .thanks h3{font-family:'Cormorant',serif;font-size:1.9rem;color:var(--teal);margin-bottom:10px}
+  .form-card .thanks p{color:var(--muted)}
+  .salary-pill b{color:var(--rose)}
+  .hero-actions{display:flex;gap:14px;flex-wrap:wrap;margin-top:34px}
+  .btn{display:inline-flex;align-items:center;gap:9px;font-weight:600;font-size:16px;padding:16px 32px;border-radius:100px;text-decoration:none;transition:.3s var(--ease)}
+  .btn-p{background:var(--teal);color:#fff;box-shadow:0 12px 28px rgba(50,96,112,.24)}
+  .btn-p:hover{transform:translateY(-3px);background:var(--teal-deep)}
+  .btn-g{background:transparent;color:var(--ink);border:1px solid var(--blush-deep)}
+  .btn-g:hover{background:var(--blush)}
+  .hero-img{position:relative}
+  .hero-img img{width:100%;border-radius:200px 200px 28px 28px;display:block;box-shadow:0 30px 70px rgba(216,164,143,.3)}
+  .hero-badge{position:absolute;bottom:24px;left:-22px;background:#fff;border-radius:20px;padding:18px 24px;box-shadow:0 16px 40px rgba(58,50,46,.14);text-align:center}
+  .hero-badge .n{font-family:'Cormorant',serif;font-size:2rem;font-weight:600;color:var(--teal);line-height:1}
+  .hero-badge .t{font-size:12px;color:var(--muted);margin-top:4px}
+
+  /* stats */
+  .stats{padding:24px 0 60px}
+  .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+  .stat{background:#fff;border-radius:22px;padding:28px 22px;text-align:center;border:1px solid var(--sand)}
+  .stat .num{font-family:'Cormorant',serif;font-size:2.4rem;font-weight:600;color:var(--teal);line-height:1}
+  .stat .lbl{font-size:13px;color:var(--muted);margin-top:8px;font-weight:300}
+
+  section.block{padding:80px 0}
+  .sec-head{text-align:center;max-width:620px;margin:0 auto 50px}
+  .sec-head .tag{font-family:'Cormorant',serif;font-style:italic;font-size:1.4rem;color:var(--rose);display:block;margin-bottom:8px}
+  .sec-head h2{font-size:clamp(1.9rem,3.6vw,2.6rem);color:var(--ink)}
+
+  .cards2{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+  .card{background:#fff;border-radius:26px;padding:38px;border:1px solid var(--sand);transition:.4s var(--ease)}
+  .card:hover{transform:translateY(-6px);box-shadow:0 22px 50px rgba(216,164,143,.2)}
+  .card h3{font-size:1.3rem;color:var(--teal-deep);margin-bottom:18px}
+  .card ul{list-style:none}
+  .card li{position:relative;padding-left:26px;margin-bottom:12px;color:var(--muted);font-weight:300}
+  .card li::before{content:"";position:absolute;left:0;top:9px;width:9px;height:9px;border-radius:50%;background:var(--rose)}
+  .card li b{color:var(--ink);font-weight:500}
+
+  .moti{background:var(--blush)}
+  .highlight{background:var(--teal);color:#fff;border-radius:30px;padding:54px;margin-top:30px}
+  .highlight h3{font-size:clamp(1.4rem,2.6vw,1.9rem);margin-bottom:24px;max-width:760px}
+  .hl{display:grid;grid-template-columns:1fr 1fr;gap:36px}
+  .hl b{display:block;font-family:'Cormorant',serif;font-style:italic;font-size:1.3rem;color:var(--blush);margin-bottom:6px;font-weight:500}
+  .hl p{color:rgba(255,255,255,.9);font-weight:300}
+
+  .reviews .rev-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+  .rev{background:#fff;border-radius:26px;padding:34px;border:1px solid var(--sand)}
+  .rev .q{font-family:'Cormorant',serif;font-size:2.6rem;color:var(--rose);line-height:.6}
+  .rev p{color:var(--muted);font-weight:300;margin:14px 0 20px}
+  .rev .a{display:flex;align-items:center;gap:12px}
+  .rev .av{width:44px;height:44px;border-radius:50%;background:var(--blush);color:var(--teal);display:flex;align-items:center;justify-content:center;font-weight:600}
+  .rev .a b{display:block;color:var(--ink)}
+  .rev .a span{font-size:12px;color:var(--muted)}
+  .rev-more{display:flex;justify-content:center;margin-top:40px}
+  .btn-outline{display:inline-flex;align-items:center;gap:9px;font-size:1rem;font-weight:500;color:var(--teal-deep);padding:15px 32px;border:1.5px solid var(--blush-deep);border-radius:100px;text-decoration:none;transition:.3s var(--ease)}
+  .btn-outline b{font-weight:600}
+  .btn-outline:hover{background:var(--teal);border-color:var(--teal);color:#fff;transform:translateY(-2px)}
+
+  .apply{background:var(--sand)}
+  .apply-grid{display:grid;grid-template-columns:.9fr 1.1fr;gap:54px;align-items:start}
+  .apply-left{position:sticky;top:110px}
+  .apply-left .tag{font-family:'Cormorant',serif;font-style:italic;font-size:1.4rem;color:var(--rose)}
+  .apply-left h2{font-size:clamp(2rem,3.6vw,2.7rem);color:var(--ink);margin:6px 0 18px}
+  .apply-left p{color:var(--muted);font-weight:300;margin-bottom:24px}
+  .pts{list-style:none}
+  .pts li{display:flex;gap:12px;margin-bottom:14px;align-items:center}
+  .pts li::before{content:"✓";width:26px;height:26px;border-radius:50%;background:var(--blush);color:var(--teal);display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px;flex-shrink:0}
+  .form-card{background:#fff;border-radius:30px;padding:18px;box-shadow:0 24px 60px rgba(216,164,143,.22)}
+
+  footer{background:var(--teal-deep);color:rgba(255,255,255,.8);text-align:center;padding:54px 0 38px}
+  footer .bf{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:16px}
+  footer .bf img{width:36px}
+  footer .bf .name{color:#fff;font-weight:600;letter-spacing:.22em}
+  footer p{font-weight:300;font-size:14px;max-width:560px;margin:0 auto 6px}
+  footer .cities{color:var(--blush);margin-top:12px;font-size:13px}
+  footer .copy{margin-top:22px;font-size:13px;color:rgba(255,255,255,.5)}
+
+  .reveal{opacity:0;transform:translateY(26px);transition:.8s var(--ease)}
+  .reveal.in{opacity:1;transform:none}
+
+  /* sticky mobile CTA bar */
+  .mcta{display:none}
+
+  @media(max-width:920px){
+    .hero-grid{grid-template-columns:1fr;gap:40px}
+    .hero-img{order:-1}
+    .stats-grid{grid-template-columns:1fr 1fr}
+    .cards2,.hl,.apply-grid{grid-template-columns:1fr;gap:30px}
+    .reviews .rev-grid{grid-template-columns:1fr}
+    .apply-left{position:static}
+    .highlight{padding:36px 26px}
+  }
+
+  /* ===== MOBILE (упор на мобайл) ===== */
+  @media(max-width:600px){
+    .wrap{padding:0 18px}
+    header.nav{padding:12px 18px}
+    header.nav.scrolled{padding:10px 18px}
+    .brand img{width:34px}
+    .brand .name{font-size:15px;letter-spacing:.18em}
+    .nav-cta{padding:9px 18px;font-size:13px}
+
+    .hero{padding:96px 0 50px}
+    .hero-grid{gap:30px}
+    .eyebrow{font-size:1.25rem;margin-bottom:10px}
+    .hero h1{font-size:2.15rem;line-height:1.08}
+    .hero p.lead{font-size:1.04rem;margin:18px 0}
+    .salary-pill{font-size:.92rem;padding:11px 18px;width:100%;justify-content:center;text-align:center}
+    .hero-actions{margin-top:24px;gap:12px}
+    .hero-actions .btn{flex:1;justify-content:center;padding:15px 18px;font-size:15px}
+    .hero-img img{border-radius:120px 120px 22px 22px}
+    .hero-badge{left:50%;transform:translateX(-50%);bottom:-18px;padding:14px 22px}
+
+    .stats{padding:18px 0 44px}
+    .stats-grid{gap:12px}
+    .stat{padding:20px 14px;border-radius:18px}
+    .stat .num{font-size:1.9rem}
+    .stat .lbl{font-size:12px}
+
+    section.block{padding:54px 0}
+    .sec-head{margin-bottom:34px}
+    .sec-head .tag{font-size:1.2rem}
+    .sec-head h2{font-size:1.7rem}
+    .card{padding:28px 24px;border-radius:22px}
+    .card h3{font-size:1.2rem;margin-bottom:14px}
+    .highlight{padding:30px 22px;border-radius:24px}
+    .highlight h3{font-size:1.35rem;margin-bottom:20px}
+    .hl{gap:22px}
+
+    .rev{padding:28px 24px}
+    .rev-more{margin-top:30px}
+    .btn-outline{width:100%;justify-content:center;padding:15px 18px;font-size:.95rem}
+
+    .apply-left h2{font-size:1.8rem}
+    .form-card{padding:12px;border-radius:22px}
+
+    footer{padding:44px 0 110px}
+    footer .cities{font-size:12px;line-height:1.7}
+
+    /* скрываем верхнюю кнопку — вместо неё нижняя липкая */
+    .nav-cta{display:none}
+    .mcta{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:200;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:rgba(251,246,241,.96);backdrop-filter:blur(12px);border-top:1px solid var(--blush-deep);box-shadow:0 -6px 24px rgba(58,50,46,.1)}
+    .mcta a{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;background:var(--teal);color:#fff;font-weight:600;font-size:16px;padding:15px;border-radius:100px;text-decoration:none}
+  }
+  @media(max-width:360px){.hero h1{font-size:1.95rem}.sec-head h2{font-size:1.5rem}}
+</style>
+</head>
+<body>
+<header class="nav" id="nav">
+  <div class="brand"><img src="assets/bird_teal.png" alt="SKIN LINE"/><span class="name">SKIN LINE</span></div>
+  <a href="#apply" class="nav-cta">Откликнуться</a>
+</header>
+
+<section class="hero"><div class="wrap"><div class="hero-grid">
+  <div class="reveal">
+    <div class="eyebrow">Вакансия · косметолог</div>
+    <h1>Работайте там, где вас <em>ценят</em> и развивают</h1>
+    <p class="lead">Современная студия лазерной эпиляции и аппаратной косметологии SKIN LINE приглашает специалиста в свою команду.</p>
+    <div class="salary-pill">Доход <b>от 70 000 ₽</b> · обучение за счёт компании</div>
+    <div class="hero-actions">
+      <a href="#apply" class="btn btn-p">Заполнить анкету →</a>
+      <a href="#about" class="btn btn-g">О компании</a>
+    </div>
+  </div>
+  <div class="hero-img reveal">
+    <img src="assets/warm.jpg" alt="Косметология SKIN LINE"/>
+    <div class="hero-badge"><div class="n">5,0★</div><div class="t">рейтинг во всех<br>13 филиалах</div></div>
+  </div>
+</div></div></section>
+
+<section class="stats"><div class="wrap"><div class="stats-grid">
+  <div class="stat reveal"><div class="num">13</div><div class="lbl">филиалов в 10 городах</div></div>
+  <div class="stat reveal"><div class="num">5,0★</div><div class="lbl">средний рейтинг сети</div></div>
+  <div class="stat reveal"><div class="num">8 600+</div><div class="lbl">отзывов клиентов</div></div>
+  <div class="stat reveal"><div class="num">2018</div><div class="lbl">года развиваем сеть</div></div>
+</div></div></section>
+
+<section class="block" id="about"><div class="wrap">
+  <div class="sec-head reveal"><span class="tag">Что вы получите</span><h2>Условия, в которых приятно работать</h2></div>
+  <div class="cards2">
+    <div class="card reveal"><h3>Что вы будете делать</h3><ul>
+      <li>Консультировать гостей и подбирать процедуры;</li>
+      <li>проводить лазерную эпиляцию, аппаратный массаж и другие услуги;</li>
+      <li>помогать клиентам достигать идеальных результатов.</li>
+    </ul></div>
+    <div class="card reveal"><h3>Мы предлагаем</h3><ul>
+      <li>График <b>2/2</b> (9:00–21:00);</li>
+      <li>обучение за счёт компании;</li>
+      <li>работу на премиальной косметике и оборудовании;</li>
+      <li>скидки <b>50 %</b> на услуги сети.</li>
+    </ul></div>
+  </div>
+</div></section>
+
+<section class="block moti"><div class="wrap">
+  <div class="sec-head reveal"><span class="tag">Доход и бонусы</span><h2>Прозрачная мотивация</h2></div>
+  <div class="cards2">
+    <div class="card reveal"><h3>Наша мотивация</h3><ul>
+      <li>Оклад;</li><li>бонус за каждую процедуру;</li>
+      <li>динамичный процент от продаж абонементов, растущий вместе с выручкой.</li>
+    </ul></div>
+    <div class="card reveal"><h3>Дополнительные бонусы</h3><ul>
+      <li>За отметки в соцсетях;</li><li>за разданные сертификаты;</li>
+      <li>за выполнение дневного плана;</li><li>за участие в съёмках Reels.</li>
+    </ul></div>
+  </div>
+  <div class="highlight reveal">
+    <h3>Почему вам не придётся искать и записывать клиентов?</h3>
+    <div class="hl">
+      <div><b>Наша задача</b><p>Свой отдел продаж и маркетинга обеспечивают стабильный поток — от 5 новых клиентов в день.</p></div>
+      <div><b>Ваша задача</b><p>Качественно работать с уже записанными клиентами, а не тратить время на продвижение.</p></div>
+    </div>
+  </div>
+</div></section>
+
+<section class="block reviews"><div class="wrap">
+  <div class="sec-head reveal"><span class="tag">Отзывы команды</span><h2>Что говорят наши специалисты</h2></div>
+  <div class="rev-grid">
+    <div class="rev reveal"><div class="q">“</div><p>Безумно счастлива, что попала в этот дружный коллектив. Одна из самых комфортных клиник для работы — помощь руководства, праздники, игры, постоянное совершенствование.</p><div class="a"><div class="av">М</div><div><b>Маргарита</b><span>Косметолог · Казань</span></div></div></div>
+    <div class="rev reveal"><div class="q">“</div><p>Лучшая компания, в которой я работала. Руководство, коллектив, система мотивации — 10 из 10. Вспоминаю с теплотой. Желаю процветания!</p><div class="a"><div class="av">А</div><div><b>Анастасия</b><span>Косметолог-эстетист · Воронеж</span></div></div></div>
+    <div class="rev reveal"><div class="q">“</div><p>Очень довольна работой. Руководство лояльное и всегда идёт навстречу. Зарплата хорошая и стабильная — чувствуешь себя уверенно.</p><div class="a"><div class="av">О</div><div><b>Ольга</b><span>Лазерная эпиляция · Липецк</span></div></div></div>
+  </div>
+  <div class="rev-more reveal">
+    <a href="https://dreamjob.ru/employers/307567" target="_blank" rel="noopener" class="btn-outline">Больше отзывов на <b>Dream Job</b> →</a>
+  </div>
+</div></section>
+
+<section class="block apply" id="apply"><div class="wrap"><div class="apply-grid">
+  <div class="apply-left reveal">
+    <span class="tag">Анкета специалиста</span>
+    <h2>Сделайте первый шаг</h2>
+    <p>Заполните короткую анкету — и мы свяжемся с вами в течение рабочего дня.</p>
+    <ul class="pts"><li>Ответим в течение рабочего дня</li><li>Обучение за счёт компании</li><li>Поток клиентов уже обеспечен</li></ul>
+  </div>
+  <div class="reveal"><div class="form-card">
+    <form id="applyForm" class="apply-form" novalidate>
+      <div class="af-row"><label>Имя и фамилия<span>*</span><input type="text" name="fullName" required autocomplete="name" placeholder="Анна Иванова" /></label></div>
+      <div class="af-row"><label>Телефон<span>*</span><input type="tel" name="phone" required autocomplete="tel" placeholder="+7 999 123-45-67" /></label></div>
+      <div class="af-row"><label>Город<span>*</span><input type="text" name="city" required placeholder="Казань" /></label></div>
+      <div class="af-row"><label>Опыт работы<input type="text" name="experience" placeholder="Например: 2 года косметологом" /></label></div>
+      <div class="af-row"><label>Ожидаемый доход<input type="text" name="expectedSalary" placeholder="Например: от 80 000 ₽" /></label></div>
+      <div class="af-row"><label>Комментарий<textarea name="comment" rows="2" placeholder="Коротко о себе (необязательно)"></textarea></label></div>
+      <label class="af-consent"><input type="checkbox" name="consent" required /><span>Согласен(а) на обработку персональных данных</span></label>
+      <button type="submit" class="af-submit">Отправить анкету</button>
+      <p class="af-msg" id="applyMsg" role="status" aria-live="polite"></p>
+    </form>
+  </div></div>
+</div></div></section>
+
+<footer><div class="wrap">
+  <div class="bf"><img src="assets/bird_white.png" alt="SKIN LINE"/><span class="name">SKIN LINE</span></div>
+  <p>Сеть студий лазерной эпиляции и аппаратной косметологии Skin Line.</p>
+  <p class="cities">Чебоксары · Йошкар-Ола · Казань · Киров · Курск · Воронеж · Набережные Челны · Липецк · Сургут · Новочебоксарск</p>
+  <p class="copy">© 2026 SKIN LINE</p>
+</div></footer>
+
+<div class="mcta" id="mcta"><a href="#apply">Заполнить анкету →</a></div>
+
+<script>
+const nav=document.getElementById('nav');const os=()=>nav.classList.toggle('scrolled',scrollY>60);addEventListener('scroll',os,{passive:1});os();
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}}),{threshold:.12,rootMargin:'0px 0px -40px'});document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+// прячем нижнюю кнопку, когда форма на экране
+// --- анкета -> CRM ---
+(function(){
+  var form=document.getElementById('applyForm');
+  if(!form)return;
+  var ENDPOINT='https://app.skinline-hr.ru/api/public/apply';
+  var startedAt=Date.now();
+  var msg=document.getElementById('applyMsg');
+  function qs(k){try{return new URLSearchParams(location.search).get(k)||'';}catch(e){return '';}}
+  form.addEventListener('submit',function(ev){
+    ev.preventDefault();
+    msg.className='af-msg';msg.textContent='';
+    var fd=new FormData(form);
+    var fullName=(fd.get('fullName')||'').toString().trim();
+    var phone=(fd.get('phone')||'').toString().trim();
+    var city=(fd.get('city')||'').toString().trim();
+    if(!fullName||!phone||!city){msg.className='af-msg err';msg.textContent='Заполните имя, телефон и город.';return;}
+    if(!form.querySelector('input[name=consent]').checked){msg.className='af-msg err';msg.textContent='Нужно согласие на обработку данных.';return;}
+    var payload={fullName:fullName,phone:phone,city:city,experience:(fd.get('experience')||'').toString().trim(),expectedSalary:(fd.get('expectedSalary')||'').toString().trim(),comment:(fd.get('comment')||'').toString().trim(),consent:true,formFilledInSeconds:Math.round((Date.now()-startedAt)/1000),utmSource:qs('utm_source'),utmMedium:qs('utm_medium'),utmCampaign:qs('utm_campaign')};
+    var btn=form.querySelector('.af-submit');btn.disabled=true;btn.textContent='Отправляем…';
+    fetch(ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+      .then(function(r){return r.json().catch(function(){return {};}).then(function(j){return {ok:r.ok,j:j};});})
+      .then(function(res){
+        if(res.ok&&res.j&&res.j.ok){
+          var card=form.closest('.form-card');
+          form.classList.add('done');
+          var t=document.createElement('div');t.className='thanks show';t.innerHTML='<h3>Спасибо!</h3><p>Анкета отправлена. Мы свяжемся с вами в течение рабочего дня.</p>';card.appendChild(t);
+        }else{
+          btn.disabled=false;btn.textContent='Отправить анкету';
+          msg.className='af-msg err';msg.textContent=(res.j&&res.j.error)?res.j.error:'Не удалось отправить. Попробуйте ещё раз.';
+        }
+      })
+      .catch(function(){btn.disabled=false;btn.textContent='Отправить анкету';msg.className='af-msg err';msg.textContent='Ошибка сети. Попробуйте ещё раз.';});
+  });
+})();
+const mcta=document.getElementById('mcta');const applySec=document.getElementById('apply');
+if(mcta&&applySec){new IntersectionObserver(es=>es.forEach(e=>{mcta.style.opacity=e.isIntersecting?'0':'1';mcta.style.pointerEvents=e.isIntersecting?'none':'auto';mcta.style.transform=e.isIntersecting?'translateY(100%)':'none';mcta.style.transition='.35s var(--ease)';}),{threshold:.12}).observe(applySec);}
+</script>
+</body>
+</html>
