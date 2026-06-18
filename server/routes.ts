@@ -51,12 +51,17 @@ function placeholderIntegration(source: string): IntegrationPublic {
 
 const FRONTEND_SETTINGS_URL = "/#/settings";
 
-// All 15 valid stage keys
-const VALID_STAGES = new Set([
-  "response", "form_filled", "in_work", "video_interview", "studio_demo", "theory",
-  "exam_scheduled", "reexam", "trainer_onboarding", "studio_practice",
-  "scheduled", "reserve", "rejected", "official", "dismissed",
+// Fixed Tailwind color palette stages can use.
+const STAGE_COLORS = new Set([
+  "sky", "blue", "cyan", "indigo", "violet", "purple", "pink",
+  "amber", "orange", "teal", "emerald", "green", "gray", "red", "slate",
 ]);
+
+// Returns the set of valid stage keys from the DB (dynamic funnel config).
+async function getValidStageKeys(): Promise<Set<string>> {
+  const rows = await storage.getStages();
+  return new Set(rows.map((s) => s.key));
+}
 
 const STAGE_LABELS: Record<string, string> = {
   response: "Отклик",
@@ -390,7 +395,8 @@ export async function registerRoutes(
   // stage change (dedicated endpoint)
   app.patch("/api/candidates/:id/stage", async (req, res) => {
     const { stage, rejectReason } = req.body as { stage: string; rejectReason?: string };
-    if (!stage || !VALID_STAGES.has(stage)) return res.status(400).json({ message: "Неверный этап" });
+    const validStages = await getValidStageKeys();
+    if (!stage || !validStages.has(stage)) return res.status(400).json({ message: "Неверный этап" });
     const existing = await storage.getCandidate(req.params.id);
     if (!existing) return res.status(404).json({ message: "Кандидат не найден" });
     const c = await storage.updateCandidate(req.params.id, {
@@ -484,25 +490,69 @@ export async function registerRoutes(
     res.json(updated);
   });
 
-  // ---------- Stages ----------
+  // ---------- Stages (dynamic funnel configuration) ----------
   app.get("/api/stages", async (_req, res) => {
-    res.json([
-      { key: "response", label: "Отклик", color: "sky", roleOwner: "hr_manager" },
-      { key: "form_filled", label: "Анкета заполнена", color: "blue", roleOwner: "hr_manager" },
-      { key: "in_work", label: "Взяли в работу", color: "cyan", roleOwner: "hr_manager" },
-      { key: "video_interview", label: "Видеоинтервью", color: "indigo", roleOwner: "hr_manager" },
-      { key: "studio_demo", label: "Демо-погружение в студии", color: "violet", roleOwner: "uk" },
-      { key: "theory", label: "Выдаём теорию", color: "purple", roleOwner: "uk" },
-      { key: "exam_scheduled", label: "Назначен экзамен", color: "pink", roleOwner: "uk" },
-      { key: "reexam", label: "Переэкзаменовка", color: "amber", roleOwner: "trainer_1" },
-      { key: "trainer_onboarding", label: "Обучение тренером", color: "orange", roleOwner: "trainer_2" },
-      { key: "studio_practice", label: "Практика в студии", color: "teal", roleOwner: "uk" },
-      { key: "scheduled", label: "Выход в график", color: "emerald", roleOwner: "manager" },
-      { key: "reserve", label: "Резерв", color: "gray", roleOwner: "uk" },
-      { key: "rejected", label: "Отказ", color: "red", roleOwner: "uk" },
-      { key: "official", label: "Офиц-ое трудоустройство", color: "green", roleOwner: "manager" },
-      { key: "dismissed", label: "Увольнение", color: "slate", roleOwner: "manager" },
-    ]);
+    const rows = await storage.getStages();
+    res.json(rows.map((s) => ({
+      key: s.key, label: s.label, color: s.color,
+      roleOwner: s.roleOwner, position: s.position, isSystem: s.isSystem === 1,
+    })));
+  });
+
+  app.post("/api/stages", async (req, res) => {
+    const { label, color, roleOwner } = req.body as { label?: string; color?: string; roleOwner?: string | null };
+    if (!label || !label.trim()) return res.status(400).json({ message: "Укажите название этапа" });
+    if (!color || !STAGE_COLORS.has(color)) return res.status(400).json({ message: "Неверный цвет этапа" });
+    const created = await storage.createStage({ label: label.trim(), color, roleOwner: roleOwner ?? null });
+    res.status(201).json({
+      key: created.key, label: created.label, color: created.color,
+      roleOwner: created.roleOwner, position: created.position, isSystem: created.isSystem === 1,
+    });
+  });
+
+  app.patch("/api/stages/:key", async (req, res) => {
+    const existing = await storage.getStage(req.params.key);
+    if (!existing) return res.status(404).json({ message: "Этап не найден" });
+    const { label, color, roleOwner } = req.body as { label?: string; color?: string; roleOwner?: string | null };
+    if (color !== undefined && !STAGE_COLORS.has(color)) return res.status(400).json({ message: "Неверный цвет этапа" });
+    if (label !== undefined && !label.trim()) return res.status(400).json({ message: "Название этапа не может быть пустым" });
+    const updated = await storage.updateStage(req.params.key, {
+      ...(label !== undefined ? { label: label.trim() } : {}),
+      ...(color !== undefined ? { color } : {}),
+      ...(roleOwner !== undefined ? { roleOwner } : {}),
+    });
+    if (!updated) return res.status(404).json({ message: "Этап не найден" });
+    res.json({
+      key: updated.key, label: updated.label, color: updated.color,
+      roleOwner: updated.roleOwner, position: updated.position, isSystem: updated.isSystem === 1,
+    });
+  });
+
+  app.delete("/api/stages/:key", async (req, res) => {
+    const existing = await storage.getStage(req.params.key);
+    if (!existing) return res.status(404).json({ message: "Этап не найден" });
+    if (existing.isSystem === 1) {
+      return res.status(400).json({ message: "Системный этап нельзя удалить" });
+    }
+    const { removedCandidates } = await storage.deleteStage(req.params.key);
+    res.json({ ok: true, removedCandidates });
+  });
+
+  app.put("/api/stages/reorder", async (req, res) => {
+    const { order } = req.body as { order?: string[] };
+    if (!Array.isArray(order) || order.length === 0) {
+      return res.status(400).json({ message: "Передайте порядок этапов" });
+    }
+    const all = await storage.getStages();
+    const known = new Set(all.map((s) => s.key));
+    if (order.length !== all.length || !order.every((k) => known.has(k))) {
+      return res.status(400).json({ message: "Список этапов не совпадает" });
+    }
+    const rows = await storage.reorderStages(order);
+    res.json(rows.map((s) => ({
+      key: s.key, label: s.label, color: s.color,
+      roleOwner: s.roleOwner, position: s.position, isSystem: s.isSystem === 1,
+    })));
   });
 
   // ---------- Documents ----------
@@ -591,7 +641,7 @@ export async function registerRoutes(
     const all = await storage.getCandidates();
     const vacs = await storage.getVacancies();
     const byStage: Record<string, number> = {};
-    for (const key of Array.from(VALID_STAGES)) byStage[key] = 0;
+    for (const key of Array.from(await getValidStageKeys())) byStage[key] = 0;
     const bySource: Record<string, number> = { avito: 0, hh: 0, telegram: 0, manual: 0 };
     let officialThisMonth = 0;
     let newThisWeek = 0;

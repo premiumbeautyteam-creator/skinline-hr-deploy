@@ -25,7 +25,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
 import { CandidateAvatar, SourceBadge, StageBadge } from "@/components/shared";
-import { STAGES, STAGE_MAP, DOC_TYPES, CHANNELS, parseTags } from "@/lib/crm";
+import { useStages, DOC_TYPES, CHANNELS, parseTags } from "@/lib/crm";
 import { cn } from "@/lib/utils";
 import type { Candidate, Vacancy, Message, Activity, Document } from "@shared/schema";
 
@@ -135,6 +135,7 @@ export default function CandidateDetail() {
   const [sendingQuiz, setSendingQuiz] = useState(false);
 
   const { data: candidate, isLoading } = useQuery<Candidate>({ queryKey: ["/api/candidates", id] });
+  const { stages } = useStages();
 
   useEffect(() => {
     if (candidate?.source === "hh" && !channelTouched) {
@@ -760,7 +761,7 @@ export default function CandidateDetail() {
             <Select value={candidate.stage} onValueChange={(v) => changeStage(v)}>
               <SelectTrigger className="mt-3" data-testid="select-stage"><SelectValue /></SelectTrigger>
               <SelectContent>
-                {STAGES.map((s) => <SelectItem key={s.key} value={s.key}>{s.label}</SelectItem>)}
+                {stages.map((s) => <SelectItem key={s.key} value={s.key}>{s.label}</SelectItem>)}
               </SelectContent>
             </Select>
 

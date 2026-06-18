@@ -14,6 +14,7 @@ import {
   companyRatings,
   // Iter6
   scorecardTemplates, scorecardResponses, interviewVideos,
+  stages,
 } from '@shared/schema';
 import type {
   Vacancy, InsertVacancy,
@@ -55,6 +56,7 @@ import type {
   ScorecardTemplate, InsertScorecardTemplate,
   ScorecardResponse, InsertScorecardResponse,
   InterviewVideo, InsertInterviewVideo,
+  Stage,
 } from '@shared/schema';
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import Database from "better-sqlite3";
@@ -451,6 +453,58 @@ CREATE TABLE IF NOT EXISTS interview_videos (
 );
 `);
 
+// Dynamic pipeline stages
+sqlite.exec(`
+CREATE TABLE IF NOT EXISTS stages (
+  key TEXT PRIMARY KEY,
+  label TEXT NOT NULL,
+  color TEXT NOT NULL,
+  position INTEGER NOT NULL,
+  role_owner TEXT,
+  is_system INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT,
+  updated_at TEXT
+);
+`);
+
+// Seed the 15 current stages once, only when the table is empty. Idempotent and
+// additive — safe to run against the live production data.db (never overwrites
+// existing rows or any other data, including OAuth tokens).
+function seedStages() {
+  const count = (sqlite.prepare("SELECT COUNT(*) AS n FROM stages").get() as { n: number }).n;
+  if (count > 0) return;
+  const now = new Date().toISOString();
+  const defs: Array<{ key: string; label: string; color: string; roleOwner: string | null; isSystem: number }> = [
+    { key: "response", label: "Отклик", color: "sky", roleOwner: "hr_manager", isSystem: 1 },
+    { key: "form_filled", label: "Анкета заполнена", color: "blue", roleOwner: "hr_manager", isSystem: 1 },
+    { key: "in_work", label: "Взяли в работу", color: "cyan", roleOwner: "hr_manager", isSystem: 0 },
+    { key: "video_interview", label: "Видеоинтервью", color: "indigo", roleOwner: "hr_manager", isSystem: 0 },
+    { key: "studio_demo", label: "Демо-погружение в студии", color: "violet", roleOwner: "uk", isSystem: 0 },
+    { key: "theory", label: "Выдаём теорию", color: "purple", roleOwner: "uk", isSystem: 0 },
+    { key: "exam_scheduled", label: "Назначен экзамен", color: "pink", roleOwner: "uk", isSystem: 0 },
+    { key: "reexam", label: "Переэкзаменовка", color: "amber", roleOwner: "trainer_1", isSystem: 0 },
+    { key: "trainer_onboarding", label: "Обучение тренером", color: "orange", roleOwner: "trainer_2", isSystem: 0 },
+    { key: "studio_practice", label: "Практика в студии", color: "teal", roleOwner: "uk", isSystem: 0 },
+    { key: "scheduled", label: "Выход в график", color: "emerald", roleOwner: "manager", isSystem: 0 },
+    { key: "reserve", label: "Резерв", color: "gray", roleOwner: "uk", isSystem: 0 },
+    { key: "rejected", label: "Отказ", color: "red", roleOwner: "uk", isSystem: 0 },
+    { key: "official", label: "Офиц-ое трудоустройство", color: "green", roleOwner: "manager", isSystem: 0 },
+    { key: "dismissed", label: "Увольнение", color: "slate", roleOwner: "manager", isSystem: 0 },
+  ];
+  const insert = sqlite.prepare(
+    "INSERT INTO stages (key, label, color, position, role_owner, is_system, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+  );
+  const tx = sqlite.transaction(() => {
+    defs.forEach((d, i) => insert.run(d.key, d.label, d.color, i, d.roleOwner, d.isSystem, now, now));
+  });
+  tx();
+}
+try {
+  seedStages();
+} catch (err) {
+  console.error("[seed] seedStages failed (continuing):", err);
+}
+
 export const db = drizzle(sqlite);
 
 export interface IStorage {
@@ -646,6 +700,13 @@ export interface IStorage {
   createInterviewVideo(data: InsertInterviewVideo): Promise<InterviewVideo>;
   updateInterviewVideo(id: string, data: Partial<InsertInterviewVideo>): Promise<InterviewVideo | undefined>;
   getPendingInterviewVideos(limit?: number): Promise<InterviewVideo[]>;
+  // ---- stages ----
+  getStages(): Promise<Stage[]>;
+  getStage(key: string): Promise<Stage | undefined>;
+  createStage(data: { label: string; color: string; roleOwner?: string | null }): Promise<Stage>;
+  updateStage(key: string, data: { label?: string; color?: string; roleOwner?: string | null }): Promise<Stage | undefined>;
+  deleteStage(key: string): Promise<{ removedCandidates: number }>;
+  reorderStages(order: string[]): Promise<Stage[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1450,6 +1511,69 @@ export class DatabaseStorage implements IStorage {
       .where(eq(interviewVideos.status, "pending"))
       .orderBy(interviewVideos.createdAt)
       .limit(limit).all();
+  }
+
+  // ---- stages ----
+  async getStages(): Promise<Stage[]> {
+    return db.select().from(stages).orderBy(stages.position).all();
+  }
+  async getStage(key: string): Promise<Stage | undefined> {
+    return db.select().from(stages).where(eq(stages.key, key)).get();
+  }
+  async createStage(data: { label: string; color: string; roleOwner?: string | null }): Promise<Stage> {
+    const now = new Date().toISOString();
+    const maxRow = sqlite.prepare("SELECT MAX(position) AS m FROM stages").get() as { m: number | null };
+    const position = (maxRow.m ?? -1) + 1;
+    // Generate a stable, unique slug. Custom stages always get a generated key so
+    // they can never collide with integration anchors.
+    let key = `custom_${Date.now()}`;
+    while (await this.getStage(key)) key = `custom_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+    return db.insert(stages).values({
+      key, label: data.label, color: data.color, position,
+      roleOwner: data.roleOwner ?? null, isSystem: 0, createdAt: now, updatedAt: now,
+    }).returning().get();
+  }
+  async updateStage(
+    key: string,
+    data: { label?: string; color?: string; roleOwner?: string | null },
+  ): Promise<Stage | undefined> {
+    const patch: Record<string, unknown> = { updatedAt: new Date().toISOString() };
+    if (data.label !== undefined) patch.label = data.label;
+    if (data.color !== undefined) patch.color = data.color;
+    if (data.roleOwner !== undefined) patch.roleOwner = data.roleOwner;
+    return db.update(stages).set(patch).where(eq(stages.key, key)).returning().get();
+  }
+  async deleteStage(key: string): Promise<{ removedCandidates: number }> {
+    // Delete the stage and cascade-remove candidates currently in it together with
+    // their dependent rows. We only ever READ from hh.ru, so removing local cards
+    // never affects the candidate on hh.ru. Wrapped in a single transaction.
+    const ids = (
+      sqlite.prepare("SELECT id FROM candidates WHERE stage = ?").all(key) as Array<{ id: string }>
+    ).map((r) => r.id);
+    const tx = sqlite.transaction(() => {
+      for (const id of ids) {
+        sqlite.prepare("DELETE FROM stage_events WHERE candidate_id = ?").run(id);
+        sqlite.prepare("DELETE FROM tasks WHERE candidate_id = ?").run(id);
+        sqlite.prepare("DELETE FROM documents WHERE candidate_id = ?").run(id);
+        sqlite.prepare("DELETE FROM messages WHERE candidate_id = ?").run(id);
+        sqlite.prepare("DELETE FROM activities WHERE candidate_id = ?").run(id);
+        sqlite.prepare("DELETE FROM external_refs WHERE entity_type = 'candidate' AND entity_id = ?").run(id);
+        sqlite.prepare("DELETE FROM scheduled_actions WHERE candidate_id = ?").run(id);
+        sqlite.prepare("DELETE FROM candidates WHERE id = ?").run(id);
+      }
+      sqlite.prepare("DELETE FROM stages WHERE key = ?").run(key);
+    });
+    tx();
+    return { removedCandidates: ids.length };
+  }
+  async reorderStages(order: string[]): Promise<Stage[]> {
+    const now = new Date().toISOString();
+    const update = sqlite.prepare("UPDATE stages SET position = ?, updated_at = ? WHERE key = ?");
+    const tx = sqlite.transaction(() => {
+      order.forEach((key, i) => update.run(i, now, key));
+    });
+    tx();
+    return this.getStages();
   }
 }
 

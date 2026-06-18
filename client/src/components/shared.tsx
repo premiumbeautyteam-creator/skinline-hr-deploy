@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { SOURCES, STAGE_MAP, avatarColor, initials } from "@/lib/crm";
+import { SOURCES, useStages, avatarColor, initials } from "@/lib/crm";
 
 export function SourceBadge({ source, className }: { source: string; className?: string }) {
   const s = SOURCES[source] ?? SOURCES.manual;
@@ -14,11 +14,12 @@ export function SourceBadge({ source, className }: { source: string; className?:
 }
 
 export function StageBadge({ stage }: { stage: string }) {
-  const s = STAGE_MAP[stage];
+  const { stageMap } = useStages();
+  const s = stageMap[stage];
   if (!s) return null;
   return (
     <span className={cn("marshall-display inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px]", s.soft)}>
-      <span className={cn("h-1.5 w-1.5 rounded-full", s.color)} />
+      <span className={cn("h-1.5 w-1.5 rounded-full", s.dot)} />
       {s.label}
     </span>
   );

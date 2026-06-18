@@ -7,7 +7,7 @@ import { Layout } from "@/components/Layout";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { STAGES, SOURCES } from "@/lib/crm";
+import { useStages, SOURCES } from "@/lib/crm";
 import { cn } from "@/lib/utils";
 import type { Activity } from "@shared/schema";
 import { BarChart, Bar, XAxis, YAxis, Tooltip as ReTooltip, ResponsiveContainer, Cell } from "recharts";
@@ -263,12 +263,13 @@ function UtmFunnelWidget() {
 
 export default function Dashboard() {
   const { data: stats, isLoading } = useQuery<Stats>({ queryKey: ["/api/dashboard/stats"] });
+  const { stages } = useStages();
 
   if (isLoading || !stats) {
     return <Layout title="Дашборд"><div className="grid grid-cols-2 gap-4 p-8 lg:grid-cols-4">{[0,1,2,3].map(i => <Skeleton key={i} className="h-24 rounded-xl" />)}</div></Layout>;
   }
 
-  const maxStage = Math.max(...STAGES.map((s) => stats.byStage[s.key] ?? 0), 1);
+  const maxStage = Math.max(...stages.map((s) => stats.byStage[s.key] ?? 0), 1);
   const totalSource = Object.values(stats.bySource).reduce((a, b) => a + b, 0) || 1;
 
   return (
@@ -285,16 +286,16 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
           {/* Funnel — 14 bars */}
           <Card className="p-5 lg:col-span-2">
-            <h2 className="mb-4 text-sm">Воронка (14 этапов)</h2>
+            <h2 className="mb-4 text-sm">Воронка ({stages.length} этапов)</h2>
             <div className="space-y-2">
-              {STAGES.map((s) => {
+              {stages.map((s) => {
                 const count = stats.byStage[s.key] ?? 0;
                 return (
                   <div key={s.key} className="flex items-center gap-3">
                     <div className="w-36 shrink-0 truncate text-xs text-muted-foreground">{s.label}</div>
                     <div className="flex-1">
                       <div className="h-6 overflow-hidden rounded-lg bg-muted">
-                        <div className={cn("flex h-full items-center rounded-lg px-2 text-xs font-medium text-white transition-all", s.color)}
+                        <div className={cn("flex h-full items-center rounded-lg px-2 text-xs font-medium text-white transition-all", s.dot)}
                           style={{ width: `${Math.max((count / maxStage) * 100, count > 0 ? 8 : 0)}%` }}>
                           {count > 0 && count}
                         </div>

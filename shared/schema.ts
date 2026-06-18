@@ -18,6 +18,20 @@ export const insertVacancySchema = createInsertSchema(vacancies).omit({ id: true
 export type InsertVacancy = z.infer<typeof insertVacancySchema>;
 export type Vacancy = typeof vacancies.$inferSelect;
 
+// Pipeline stages (dynamic funnel configuration)
+export const stages = sqliteTable("stages", {
+  key: text("key").primaryKey(), // stable slug, e.g. "response" or "custom_<ts>"
+  label: text("label").notNull(), // Russian display name
+  color: text("color").notNull(), // color name from the fixed palette (e.g. "blue")
+  position: integer("position").notNull(), // 0-based sort order
+  roleOwner: text("role_owner"), // nullable role responsible for the stage
+  isSystem: integer("is_system").notNull().default(0), // 1 for integration-anchor stages
+  createdAt: text("created_at"),
+  updatedAt: text("updated_at"),
+});
+
+export type Stage = typeof stages.$inferSelect;
+
 // Candidates
 export const candidates = sqliteTable("candidates", {
   id: text("id").primaryKey(),

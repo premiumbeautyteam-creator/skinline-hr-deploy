@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { StageManagement } from "@/components/StageManagement";
 import type { IntegrationPublic, AppSetting } from "@shared/schema";
 
 // Format an ISO timestamp into a short Russian date-time. Returns "—" when null.
@@ -257,6 +258,9 @@ export default function Settings() {
             </Card>
           );
         })}
+
+        {/* ---- Stage management (funnel configuration) ---- */}
+        <StageManagement />
 
         {/* ---- AI Settings (Iter2) ---- */}
         <AiSettingsSection />

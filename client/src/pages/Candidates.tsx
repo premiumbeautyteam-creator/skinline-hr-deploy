@@ -17,7 +17,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Loader2, RefreshCw } from "lucide-react";
 import { CandidateAvatar, SourceBadge } from "@/components/shared";
 import { CandidateFormDialog } from "@/components/CandidateFormDialog";
-import { STAGES, SOURCES, parseTags } from "@/lib/crm";
+import { useStages, SOURCES, parseTags } from "@/lib/crm";
 import { cn } from "@/lib/utils";
 import { ShoppingBag } from "lucide-react";
 import type { Candidate, Vacancy } from "@shared/schema";
@@ -125,6 +125,7 @@ export default function Candidates() {
 
   const { data: candidates, isLoading } = useQuery<Candidate[]>({ queryKey: ["/api/candidates"] });
   const { data: vacancies } = useQuery<Vacancy[]>({ queryKey: ["/api/vacancies"] });
+  const { stages } = useStages();
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
@@ -145,10 +146,10 @@ export default function Candidates() {
 
   const byStage = useMemo(() => {
     const m: Record<string, Candidate[]> = {};
-    STAGES.forEach((s) => (m[s.key] = []));
+    stages.forEach((s) => (m[s.key] = []));
     filtered.forEach((c) => m[c.stage]?.push(c));
     return m;
-  }, [filtered]);
+  }, [filtered, stages]);
 
   const activeCandidate = candidates?.find((c) => c.id === activeId);
 
@@ -257,17 +258,17 @@ export default function Candidates() {
         <div className="flex-1 overflow-x-auto p-5 md:p-8">
           {isLoading ? (
             <div className="flex gap-4">
-              {STAGES.map((s) => <Skeleton key={s.key} className="h-96 w-[280px] rounded-xl" />)}
+              {stages.map((s) => <Skeleton key={s.key} className="h-96 w-[280px] rounded-xl" />)}
             </div>
           ) : (
             <DndContext sensors={sensors} onDragStart={(e: DragStartEvent) => setActiveId(e.active.id as string)} onDragEnd={handleDragEnd}>
-              <div className="flex gap-4 pb-4" style={{ minWidth: `${STAGES.length * 296}px` }}>
-                {STAGES.map((s) => (
+              <div className="flex gap-4 pb-4" style={{ minWidth: `${stages.length * 296}px` }}>
+                {stages.map((s) => (
                   <Column
                     key={s.key}
                     stageKey={s.key}
                     label={s.label}
-                    color={s.color}
+                    color={s.dot}
                     candidates={byStage[s.key] ?? []}
                     vacancyMap={vacancyMap}
                     onCardClick={(id) => navigate(`/candidates/${id}`)}
