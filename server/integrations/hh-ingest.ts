@@ -13,6 +13,7 @@ import {
   mapNegotiationMessages,
   normalizePhone,
 } from "./hh-mapper";
+import { maybeSendAutoMessages } from "./hh-automessages";
 import type { Candidate, Vacancy } from "@shared/schema";
 
 const SOURCE = "hh";
@@ -212,6 +213,20 @@ export async function ingestNegotiation(
       description: "Получен отклик с hh.ru",
       meta: JSON.stringify({ negotiationId: String(nid) }),
     });
+  }
+
+  // 8. Onboarding auto-reply — ONLY for brand-new negotiations whose vacancy
+  // title matches (косметолог / лазерная эпиляция). Reuses the already-fetched
+  // negotiation object; gating (flag + matcher + idempotency) lives inside.
+  // Never throws into the ingest path — failures are logged and retried/guarded
+  // by the auto-message module itself.
+  if (created) {
+    const localTitle = (await storage.getVacancy(resolvedVacancyId))?.title ?? null;
+    try {
+      await maybeSendAutoMessages(client, String(nid), negotiation, candidate.id, localTitle);
+    } catch (err) {
+      console.error(`[hh-ingest] auto-message step failed for negotiation ${nid}:`, err);
+    }
   }
 
   return { candidateId: candidate.id, created, newMessages, skipped: false };

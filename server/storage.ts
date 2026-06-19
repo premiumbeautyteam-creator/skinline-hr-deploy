@@ -449,9 +449,32 @@ CREATE TABLE IF NOT EXISTS interview_videos (
   updated_at TEXT NOT NULL,
   completed_at TEXT
 );
+-- HH auto-message idempotency log: one row per negotiation we have processed
+-- for the onboarding auto-reply. Additive (CREATE IF NOT EXISTS) so it never
+-- disrupts an existing production data.db. status: 'sent' = all 3 delivered;
+-- 'failed_permanent' = HH refused permanently (e.g. messaging disabled) and we
+-- must not retry. message_count records how many of the 3 went through.
+CREATE TABLE IF NOT EXISTS auto_message_log (
+  nid TEXT PRIMARY KEY,
+  status TEXT NOT NULL DEFAULT 'sent',
+  message_count INTEGER NOT NULL DEFAULT 0,
+  vacancy_title TEXT,
+  error TEXT,
+  sent_at TEXT NOT NULL
+);
 `);
 
 export const db = drizzle(sqlite);
+
+// Idempotency record for the HH onboarding auto-reply, keyed by negotiation id.
+export interface AutoMessageLog {
+  nid: string;
+  status: "sent" | "failed_permanent";
+  messageCount: number;
+  vacancyTitle?: string | null;
+  error?: string | null;
+  sentAt: string;
+}
 
 export interface IStorage {
   // vacancies
@@ -498,6 +521,9 @@ export interface IStorage {
   getExternalRefByEntity(entityType: string, entityId: string, source: string, externalType: string): Promise<ExternalRef | undefined>;
   getExternalRefsByProvider(source: string, externalType?: string): Promise<ExternalRef[]>;
   createExternalRef(r: InsertExternalRef): Promise<ExternalRef>;
+  // hh auto-message log
+  getAutoMessageLog(nid: string): Promise<AutoMessageLog | undefined>;
+  recordAutoMessageLog(entry: AutoMessageLog): Promise<void>;
   // oauth states
   createOauthState(state: string, source: string): Promise<OauthState>;
   getOauthState(state: string): Promise<OauthState | undefined>;
@@ -842,6 +868,32 @@ export class DatabaseStorage implements IStorage {
     return db.insert(externalRefs).values({
       ...r, id: randomUUID(), createdAt: new Date().toISOString(),
     }).returning().get();
+  }
+
+  // ---- hh auto-message log (idempotency guard) ----
+  async getAutoMessageLog(nid: string): Promise<AutoMessageLog | undefined> {
+    return sqlite
+      .prepare("SELECT nid, status, message_count as messageCount, vacancy_title as vacancyTitle, error, sent_at as sentAt FROM auto_message_log WHERE nid = ?")
+      .get(nid) as AutoMessageLog | undefined;
+  }
+  async recordAutoMessageLog(entry: AutoMessageLog): Promise<void> {
+    sqlite
+      .prepare(`INSERT INTO auto_message_log (nid, status, message_count, vacancy_title, error, sent_at)
+                VALUES (@nid, @status, @messageCount, @vacancyTitle, @error, @sentAt)
+                ON CONFLICT(nid) DO UPDATE SET
+                  status = excluded.status,
+                  message_count = excluded.message_count,
+                  vacancy_title = excluded.vacancy_title,
+                  error = excluded.error,
+                  sent_at = excluded.sent_at`)
+      .run({
+        nid: entry.nid,
+        status: entry.status,
+        messageCount: entry.messageCount,
+        vacancyTitle: entry.vacancyTitle ?? null,
+        error: entry.error ?? null,
+        sentAt: entry.sentAt,
+      });
   }
 
   // ---- oauth states ----
